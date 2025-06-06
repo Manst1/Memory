@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Memory</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .card { width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; font-size: 2rem; cursor: pointer; }
+    .flipped { background-color: #e5e7eb; }
+    .matched { background-color: #86efac; }
+    .disabled { pointer-events: none; }
+  </style>
+</head>
+<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen">
+  <div id="setup-screen" class="bg-white p-6 rounded-lg shadow-lg">
+    <h1 class="text-2xl font-bold mb-4">Emoji Memory Game</h1>
+    <div class="flex flex-col space-y-4">
+      <div>
+        <label for="rows" class="block text-sm font-medium text-gray-700">Rows (2-6, even):</label>
+        <input type="number" id="rows" min="2" max="6" value="4" class="mt-1 p-2 border rounded w-full">
+      </div>
+      <div>
+        <label for="cols" class="block text-sm font-medium text-gray-700">Columns (2-6, even):</label>
+        <input type="number" id="cols" min="2" max="6" value="4" class="mt-1 p-2 border rounded w-full">
+      </div>
+      <button id="start-button" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Start Game</button>
+    </div>
+  </div>
+  <div id="game-screen" class="hidden flex-col items-center">
+    <h1 class="text-2xl font-bold mb-4">Find the Matching Emojis!</h1>
+    <div id="game-board" class="grid gap-2"></div>
+    <p id="matches" class="mt-4 text-lg">Matches: 0 / 0</p>
+    <button id="restart-button" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 hidden">Play Again</button>
+  </div>
+  <script>
+    const emojis = [
+      '😺', '🐶', '🐰', '🦁', '🐻', '🐼', '🐨', '🐸', '🐵', '🦊',
+      '🐷', '🐮', '🐴', '🦒', '🦘', '🐘', '🦒', '🐍', '🐢', '🦋'
+    ];
+    let board = [];
+    let flippedCards = [];
+    let matchedPairs = 0;
+    let totalPairs = 0;
+    
+    document.getElementById('start-button').addEventListener('click', startGame);
+    document.getElementById('restart-button').addEventListener('click', resetGame);
+
+    function startGame() {
+      const rows = parseInt(document.getElementById('rows').value);
+      const cols = parseInt(document.getElementById('cols').value);
+      if (isNaN(rows) || isNaN(cols) || rows < 2 || rows > 6 || cols < 2 || cols > 6 || rows % 2 !== 0 || cols % 2 !== 0) {
+        alert('Please enter even numbers for rows and columns (2-6).');
+        return;
+      }
+      totalPairs = (rows * cols) / 2;
+      if (totalPairs > emojis.length) {
+        alert(`Grid too large! Maximum pairs supported: ${emojis.length}. Try a smaller grid.`);
+        return;
+      }
+      resetGame();
+      document.getElementById('setup-screen').classList.add('hidden');
+      document.getElementById('game-screen').classList.remove('hidden');
+      createBoard(rows, cols);
+    }
+
+    function resetGame() {
+      matchedPairs = 0;
+      flippedCards = [];
+      board = [];
+      document.getElementById('matches').textContent = `Matches: ${matchedPairs} / ${totalPairs}`;
+      document.getElementById('game-board').classList.remove('disabled');
+      document.getElementById('game-board').innerHTML = '';
+      document.getElementById('game-screen').classList.add('hidden');
+      document.getElementById('setup-screen').classList.remove('hidden');
+      document.getElementById('restart-button').classList.add('hidden');
+    }
+
+    function createBoard(rows, cols) {
+      const gameBoard = document.getElementById('game-board');
+      gameBoard.style.gridTemplateColumns = `repeat(${cols}, 80px)`;
+      gameBoard.innerHTML = '';
+      board = [];
+      flippedCards = [];
+      matchedPairs = 0;
+      document.getElementById('matches').textContent = `Matches: ${matchedPairs} / ${totalPairs}`;
+      
+      // Shuffle emojis array to select random emojis
+      const shuffledEmojis = [...emojis];
+      for (let i = shuffledEmojis.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffledEmojis[i], shuffledEmojis[j]] = [shuffledEmojis[j], shuffledEmojis[i]];
+      }
+      
+      // Select emojis for pairs
+      const selectedEmojis = shuffledEmojis.slice(0, totalPairs).flatMap(e => [e, e]);
+      // Shuffle selected emojis for board placement
+      for (let i = selectedEmojis.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [selectedEmojis[i], selectedEmojis[j]] = [selectedEmojis[j], selectedEmojis[i]];
+      }
+      
+      // Create board
+      for (let i = 0; i < rows; i++) {
+        for (let j = 0; j < cols; j++) {
+          const card = document.createElement('div');
+          card.className = 'card bg-gray-300 rounded';
+          card.dataset.emoji = selectedEmojis[i * cols + j];
+          card.dataset.row = i;
+          card.dataset.col = j;
+          card.addEventListener('click', () => flipCard(card));
+          gameBoard.appendChild(card);
+        }
+      }
+    }
+
+    function flipCard(card) {
+      if (flippedCards.length >= 2 || card.classList.contains('flipped') || card.classList.contains('matched')) return;
+      
+      card.classList.add('flipped');
+      card.textContent = card.dataset.emoji;
+      flippedCards.push(card);
+      
+      if (flippedCards.length === 2) {
+        const [card1, card2] = flippedCards;
+        if (card1.dataset.emoji === card2.dataset.emoji) {
+          card1.classList.add('matched');
+          card2.classList.add('matched');
+          matchedPairs++;
+          document.getElementById('matches').textContent = `Matches: ${matchedPairs} / ${totalPairs}`;
+          flippedCards = [];
+          if (matchedPairs === totalPairs) {
+            document.getElementById('game-board').classList.add('disabled');
+            document.getElementById('restart-button').classList.remove('hidden');
+          }
+        } else {
+          setTimeout(() => {
+            card1.classList.remove('flipped');
+            card2.classList.remove('flipped');
+            card1.textContent = '';
+            card2.textContent = '';
+            flippedCards = [];
+          }, 1000);
+        }
+      }
+    }
+  </script>
+</body>
+</html>
