@@ -17,12 +17,12 @@
     <h1 class="text-2xl font-bold mb-4">Emoji Memory Game</h1>
     <div class="flex flex-col space-y-4">
       <div>
-        <label for="rows" class="block text-sm font-medium text-gray-700">Rows (2-6, even):</label>
-        <input type="number" id="rows" min="2" max="6" value="4" class="mt-1 p-2 border rounded w-full">
+        <label for="rows" class="block text-sm font-medium text-gray-700">Rows (1-8):</label>
+        <input type="number" id="rows" min="1" max="8" value="4" class="mt-1 p-2 border rounded w-full">
       </div>
       <div>
-        <label for="cols" class="block text-sm font-medium text-gray-700">Columns (2-6, even):</label>
-        <input type="number" id="cols" min="2" max="6" value="4" class="mt-1 p-2 border rounded w-full">
+        <label for="cols" class="block text-sm font-medium text-gray-700">Columns (1-8):</label>
+        <input type="number" id="cols" min="1" max="8" value="4" class="mt-1 p-2 border rounded w-full">
       </div>
       <button id="start-button" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Start Game</button>
     </div>
@@ -35,25 +35,33 @@
   </div>
   <script>
     const emojis = [
-      '😺', '🐶', '🐰', '🦁', '🐻', '🐼', '🐨', '🐸', '🐵', '🦊',
-      '🐷', '🐮', '🐴', '🦒', '🦘', '🐘', '🦒', '🐍', '🐢', '🦋'
+      '🐀', '🐕', '🐇', '🐈', '🐞', '🐫', '🐧', '🦢', '🦧', '🦍',
+      '🐖', '🐂', '🐎', '🐄', '🦘', '🐘', '🦏', '🐍', '🐢', '🦋',
+      '🐙', '🦇', '🦀', '🐠', '🐳', '🦈', '🐊', '🦜', '🦚', '🐝',
+      '🦅', '🦉', '🐓', '🦙', '🦩', '🦔', '🐌', '🦥', '🐑', '🐛'
     ];
     let board = [];
     let flippedCards = [];
     let matchedPairs = 0;
     let totalPairs = 0;
-    
+
     document.getElementById('start-button').addEventListener('click', startGame);
     document.getElementById('restart-button').addEventListener('click', resetGame);
 
     function startGame() {
       const rows = parseInt(document.getElementById('rows').value);
       const cols = parseInt(document.getElementById('cols').value);
-      if (isNaN(rows) || isNaN(cols) || rows < 2 || rows > 6 || cols < 2 || cols > 6 || rows % 2 !== 0 || cols % 2 !== 0) {
-        alert('Please enter even numbers for rows and columns (2-6).');
+      const totalTiles = rows * cols;
+
+      if (isNaN(rows) || isNaN(cols) || rows < 1 || rows > 8 || cols < 1 || cols > 8) {
+        alert('Please enter numbers for rows and columns between 1 and 8.');
         return;
       }
-      totalPairs = (rows * cols) / 2;
+      if (totalTiles % 2 !== 0) {
+        alert('The total number of tiles must be even for pairs. Try again.');
+        return;
+      }
+      totalPairs = totalTiles / 2;
       if (totalPairs > emojis.length) {
         alert(`Grid too large! Maximum pairs supported: ${emojis.length}. Try a smaller grid.`);
         return;
@@ -84,28 +92,19 @@
       flippedCards = [];
       matchedPairs = 0;
       document.getElementById('matches').textContent = `Matches: ${matchedPairs} / ${totalPairs}`;
-      
-      // Shuffle emojis array to select random emojis
-      const shuffledEmojis = [...emojis];
-      for (let i = shuffledEmojis.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffledEmojis[i], shuffledEmojis[j]] = [shuffledEmojis[j], shuffledEmojis[i]];
-      }
-      
-      // Select emojis for pairs
-      const selectedEmojis = shuffledEmojis.slice(0, totalPairs).flatMap(e => [e, e]);
-      // Shuffle selected emojis for board placement
-      for (let i = selectedEmojis.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [selectedEmojis[i], selectedEmojis[j]] = [selectedEmojis[j], selectedEmojis[i]];
-      }
-      
+
+      // Select and shuffle emojis for pairs
+      const shuffledEmojis = [...emojis].sort(() => Math.random() - 0.5);
+      const selectedEmojis = shuffledEmojis.slice(0, totalPairs);
+      const gameEmojis = [...selectedEmojis, ...selectedEmojis]; // Create pairs
+      gameEmojis.sort(() => Math.random() - 0.5); // Shuffle pairs
+
       // Create board
       for (let i = 0; i < rows; i++) {
         for (let j = 0; j < cols; j++) {
           const card = document.createElement('div');
           card.className = 'card bg-gray-300 rounded';
-          card.dataset.emoji = selectedEmojis[i * cols + j];
+          card.dataset.emoji = gameEmojis[i * cols + j];
           card.dataset.row = i;
           card.dataset.col = j;
           card.addEventListener('click', () => flipCard(card));
@@ -116,11 +115,11 @@
 
     function flipCard(card) {
       if (flippedCards.length >= 2 || card.classList.contains('flipped') || card.classList.contains('matched')) return;
-      
+
       card.classList.add('flipped');
       card.textContent = card.dataset.emoji;
       flippedCards.push(card);
-      
+
       if (flippedCards.length === 2) {
         const [card1, card2] = flippedCards;
         if (card1.dataset.emoji === card2.dataset.emoji) {
