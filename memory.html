@@ -3,73 +3,269 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>Memory</title>
-  <link rel="icon" type="image/png" href="https://i.imgur.com/AwqpZQw.png">	  
+
+  <link rel="icon" type="image/png" href="https://i.imgur.com/AwqpZQw.png">
   <script src="https://cdn.tailwindcss.com"></script>
+
   <style>
-    .card { width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; font-size: 2rem; cursor: pointer; }
-    .flipped { background-color: #e5e7eb; }
-    .matched { background-color: #86efac; }
-    .disabled { pointer-events: none; }
+    body {
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .card {
+      width: 80px;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      cursor: pointer;
+      transition:
+        background-color 0.3s,
+        box-shadow 0.2s,
+        transform 0.15s;
+    }
+
+    .card:hover:not(.matched) {
+      transform: scale(1.04);
+    }
+
+    .flipped {
+      background-color: #e5e7eb !important;
+    }
+
+    .matched {
+      background-color: #86efac !important;
+    }
+
+    .disabled {
+      pointer-events: none;
+    }
+
+    /* Dark-mode button */
+    #darkModeButton {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      width: 120px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      background: #555;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s;
+      z-index: 100;
+   	  white-space: nowrap; 
+    }
+
+    #darkModeButton:hover {
+      background: #666;
+    }
+
+    /* Dark mode */
+    body.dark-mode {
+      background: #333 !important;
+      color: white;
+    }
+
+    body.dark-mode #setup-screen {
+      background: #444;
+      color: white;
+    }
+
+    body.dark-mode label {
+      color: #f3f4f6;
+    }
+
+    body.dark-mode input {
+      background: #555;
+      color: white;
+      border-color: #777;
+    }
+
+    body.dark-mode input:focus {
+      outline: 2px solid #60a5fa;
+    }
+
+    body.dark-mode .card {
+      background-color: #555;
+      color: white;
+    }
+
+    body.dark-mode .card.flipped {
+      background-color: #666 !important;
+    }
+
+    body.dark-mode .card.matched {
+      background-color: #15803d !important;
+    }
   </style>
 </head>
+
 <body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen">
+
   <div id="setup-screen" class="bg-white p-6 rounded-lg shadow-lg">
     <h1 class="text-2xl font-bold mb-4">Emoji Memory Game</h1>
+
     <div class="flex flex-col space-y-4">
       <div>
-        <label for="rows" class="block text-sm font-medium text-gray-700">Rows (1-8):</label>
-        <input type="number" id="rows" min="1" max="8" value="4" class="mt-1 p-2 border rounded w-full">
+        <label for="rows" class="block text-sm font-medium text-gray-700">
+          Rows (1-8):
+        </label>
+
+        <input
+          type="number"
+          id="rows"
+          min="1"
+          max="8"
+          value="4"
+          class="mt-1 p-2 border rounded w-full"
+        >
       </div>
+
       <div>
-        <label for="cols" class="block text-sm font-medium text-gray-700">Columns (1-8):</label>
-        <input type="number" id="cols" min="1" max="8" value="4" class="mt-1 p-2 border rounded w-full">
+        <label for="cols" class="block text-sm font-medium text-gray-700">
+          Columns (1-8):
+        </label>
+
+        <input
+          type="number"
+          id="cols"
+          min="1"
+          max="8"
+          value="4"
+          class="mt-1 p-2 border rounded w-full"
+        >
       </div>
-      <button id="start-button" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Start Game</button>
+
+      <button
+        id="start-button"
+        class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+      >
+        Start Game
+      </button>
     </div>
   </div>
+
   <div id="game-screen" class="hidden flex-col items-center">
     <h1 class="text-2xl font-bold mb-4">Find the Matching Emojis!</h1>
+
     <div id="game-board" class="grid gap-2"></div>
+
     <p id="matches" class="mt-4 text-lg">Matches: 0 / 0</p>
-    <button id="restart-button" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 hidden">Play Again</button>
+
+    <button
+      id="restart-button"
+      class="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 hidden"
+    >
+      Play Again
+    </button>
   </div>
+
+  <button id="darkModeButton" onclick="toggleDarkMode()">
+    Dark Mode
+  </button>
+
   <script>
+    /* ---------- DARK-MODE TOGGLE ---------- */
+
+    const darkBtn = document.getElementById('darkModeButton');
+    const body = document.body;
+
+    const savedTheme = localStorage.getItem('memory-theme');
+    const prefersDark = window.matchMedia(
+      '(prefers-color-scheme: dark)'
+    ).matches;
+
+    if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+      body.classList.add('dark-mode');
+      darkBtn.textContent = 'Light Mode';
+    }
+
+    window.toggleDarkMode = function () {
+      body.classList.toggle('dark-mode');
+
+      const isDark = body.classList.contains('dark-mode');
+
+      darkBtn.textContent = isDark ? 'Light Mode' : 'Dark Mode';
+
+      localStorage.setItem(
+        'memory-theme',
+        isDark ? 'dark' : 'light'
+      );
+    };
+
+    /* ---------- MEMORY GAME ---------- */
+
     const emojis = [
       '🐀', '🐕', '🐇', '🐈', '🐞', '🐫', '🐧', '🦢', '🦧', '🦍',
       '🐖', '🐂', '🐎', '🐄', '🦘', '🐘', '🦏', '🐍', '🐢', '🦋',
       '🐙', '🦇', '🦀', '🐠', '🐳', '🦈', '🐊', '🦜', '🦚', '🐝',
       '🦅', '🦉', '🐓', '🦙', '🦩', '🦔', '🐌', '🦥', '🐑', '🐛'
     ];
+
     let board = [];
     let flippedCards = [];
     let matchedPairs = 0;
     let totalPairs = 0;
 
-    document.getElementById('start-button').addEventListener('click', startGame);
-    document.getElementById('restart-button').addEventListener('click', resetGame);
+    document
+      .getElementById('start-button')
+      .addEventListener('click', startGame);
+
+    document
+      .getElementById('restart-button')
+      .addEventListener('click', resetGame);
 
     function startGame() {
       const rows = parseInt(document.getElementById('rows').value);
       const cols = parseInt(document.getElementById('cols').value);
       const totalTiles = rows * cols;
 
-      if (isNaN(rows) || isNaN(cols) || rows < 1 || rows > 8 || cols < 1 || cols > 8) {
-        alert('Please enter numbers for rows and columns between 1 and 8.');
+      if (
+        isNaN(rows) ||
+        isNaN(cols) ||
+        rows < 1 ||
+        rows > 8 ||
+        cols < 1 ||
+        cols > 8
+      ) {
+        alert(
+          'Please enter numbers for rows and columns between 1 and 8.'
+        );
         return;
       }
+
       if (totalTiles % 2 !== 0) {
-        alert('The total number of tiles must be even for pairs. Try again.');
+        alert(
+          'The total number of tiles must be even for pairs. Try again.'
+        );
         return;
       }
+
       totalPairs = totalTiles / 2;
+
       if (totalPairs > emojis.length) {
-        alert(`Grid too large! Maximum pairs supported: ${emojis.length}. Try a smaller grid.`);
+        alert(
+          `Grid too large! Maximum pairs supported: ${emojis.length}. Try a smaller grid.`
+        );
         return;
       }
+
       resetGame();
-      document.getElementById('setup-screen').classList.add('hidden');
-      document.getElementById('game-screen').classList.remove('hidden');
+
+      document
+        .getElementById('setup-screen')
+        .classList.add('hidden');
+
+      const gameScreen = document.getElementById('game-screen');
+      gameScreen.classList.remove('hidden');
+      gameScreen.classList.add('flex');
+
       createBoard(rows, cols);
     }
 
@@ -77,75 +273,121 @@
       matchedPairs = 0;
       flippedCards = [];
       board = [];
-      document.getElementById('matches').textContent = `Matches: ${matchedPairs} / ${totalPairs}`;
-      document.getElementById('game-board').classList.remove('disabled');
+
+      document.getElementById(
+        'matches'
+      ).textContent = `Matches: ${matchedPairs} / ${totalPairs}`;
+
+      document
+        .getElementById('game-board')
+        .classList.remove('disabled');
+
       document.getElementById('game-board').innerHTML = '';
-      document.getElementById('game-screen').classList.add('hidden');
-      document.getElementById('setup-screen').classList.remove('hidden');
-      document.getElementById('restart-button').classList.add('hidden');
+
+      const gameScreen = document.getElementById('game-screen');
+      gameScreen.classList.add('hidden');
+      gameScreen.classList.remove('flex');
+
+      document
+        .getElementById('setup-screen')
+        .classList.remove('hidden');
+
+      document
+        .getElementById('restart-button')
+        .classList.add('hidden');
     }
 
     function createBoard(rows, cols) {
       const gameBoard = document.getElementById('game-board');
-      gameBoard.style.gridTemplateColumns = `repeat(${cols}, 80px)`;
+
+      gameBoard.style.gridTemplateColumns =
+        `repeat(${cols}, 80px)`;
+
       gameBoard.innerHTML = '';
+
       board = [];
       flippedCards = [];
       matchedPairs = 0;
-      document.getElementById('matches').textContent = `Matches: ${matchedPairs} / ${totalPairs}`;
 
-      // Select and shuffle emojis for pairs
-      const shuffledEmojis = [...emojis].sort(() => Math.random() - 0.5);
+      document.getElementById(
+        'matches'
+      ).textContent = `Matches: ${matchedPairs} / ${totalPairs}`;
+
+      const shuffledEmojis = [...emojis].sort(
+        () => Math.random() - 0.5
+      );
+
       const selectedEmojis = shuffledEmojis.slice(0, totalPairs);
-      const gameEmojis = [...selectedEmojis, ...selectedEmojis]; // Create pairs
-      gameEmojis.sort(() => Math.random() - 0.5); // Shuffle pairs
+      const gameEmojis = [...selectedEmojis, ...selectedEmojis];
 
-      // Create board
+      gameEmojis.sort(() => Math.random() - 0.5);
+
       for (let i = 0; i < rows; i++) {
         for (let j = 0; j < cols; j++) {
           const card = document.createElement('div');
-          card.className = 'card bg-gray-300 rounded';
+
+          card.className = 'card bg-gray-300 rounded shadow';
           card.dataset.emoji = gameEmojis[i * cols + j];
           card.dataset.row = i;
           card.dataset.col = j;
+
           card.addEventListener('click', () => flipCard(card));
+
           gameBoard.appendChild(card);
         }
       }
     }
 
     function flipCard(card) {
-      if (flippedCards.length >= 2 || card.classList.contains('flipped') || card.classList.contains('matched')) return;
+      if (
+        flippedCards.length >= 2 ||
+        card.classList.contains('flipped') ||
+        card.classList.contains('matched')
+      ) {
+        return;
+      }
 
       card.classList.add('flipped');
       card.textContent = card.dataset.emoji;
       flippedCards.push(card);
 
-      if (flippedCards.length === 2) {
-        const [card1, card2] = flippedCards;
-        if (card1.dataset.emoji === card2.dataset.emoji) {
-          card1.classList.add('matched');
-          card2.classList.add('matched');
-          matchedPairs++;
-          document.getElementById('matches').textContent = `Matches: ${matchedPairs} / ${totalPairs}`;
-          flippedCards = [];
-          if (matchedPairs === totalPairs) {
-            document.getElementById('game-board').classList.add('disabled');
-            document.getElementById('restart-button').classList.remove('hidden');
-          }
-        } else {
-          setTimeout(() => {
-            card1.classList.remove('flipped');
-            card2.classList.remove('flipped');
-            card1.textContent = '';
-            card2.textContent = '';
-            flippedCards = [];
-          }, 1000);
+      if (flippedCards.length !== 2) return;
+
+      const [card1, card2] = flippedCards;
+
+      if (card1.dataset.emoji === card2.dataset.emoji) {
+        card1.classList.add('matched');
+        card2.classList.add('matched');
+
+        matchedPairs++;
+
+        document.getElementById(
+          'matches'
+        ).textContent = `Matches: ${matchedPairs} / ${totalPairs}`;
+
+        flippedCards = [];
+
+        if (matchedPairs === totalPairs) {
+          document
+            .getElementById('game-board')
+            .classList.add('disabled');
+
+          document
+            .getElementById('restart-button')
+            .classList.remove('hidden');
         }
+      } else {
+        setTimeout(() => {
+          card1.classList.remove('flipped');
+          card2.classList.remove('flipped');
+
+          card1.textContent = '';
+          card2.textContent = '';
+
+          flippedCards = [];
+        }, 1000);
       }
     }
   </script>
 </body>
 </html>
-
-
